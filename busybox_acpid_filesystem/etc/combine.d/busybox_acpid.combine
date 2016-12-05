@@ -1,0 +1,2 @@
+/etc acpi.map 0644 default
+/etc acpid.conf 0644 default

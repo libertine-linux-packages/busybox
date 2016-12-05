@@ -1,0 +1,200 @@
+# This file is part of libertine linux's package busybox. It is subject to the licence terms in the COPYRIGHT file found in the top-level directory of this distribution and at https://raw.githubusercontent.com/libertine-linux-packages/busybox/master/COPYRIGHT. No part of libertine linux's package busybox, including this file, may be copied, modified, propagated, or distributed except according to the terms contained in the COPYRIGHT file.
+# Copyright © 2016 The developers of libertine linux's package busybox. See the COPYRIGHT file in the top-level directory of this distribution and at https://raw.githubusercontent.com/libertine-linux-packages/busybox/master/COPYRIGHT.
+
+
+variant=upstream
+
+depends build_gnumake
+build_needs make
+
+# Problem is BusyBox supplied patch, which is what Alpine Linux uses, can't cleanly apply the patches we apply to busybox...
+depends build_netbsd_src_patch
+build_needs patch
+
+build_needs xargs
+build_needs bzip2
+build_needs cmp tail od cut mktemp sort uniq echo touch dirname basename uname
+build_needs install sed
+
+# Not sure why, but is needed...
+build_needs sleep
+
+case "$package" in
+	
+	build_busybox)
+		# ranlib as
+		build_needs cc ar
+		
+		build_provides echo pwd printf '[' '[[' test true false kill yes dirname basename
+		build_provides mkdir rmdir rm touch chmod chown chgrp mkfifo mknod install mktemp which unlink
+		build_provides stat readlink ls realpath
+		build_provides mv cp ln
+		build_provides find xargs
+		build_provides cksum md5sum sha1sum sha256sum sha512sum sha3sum
+		build_provides env
+		
+		# ? Seg faults ?
+		#build_provides grep awk sed egrep fgrep pgrep cut comm split
+		build_provides tr dos2unix unix2dos
+		build_provides tee flock
+		build_provides dd
+		build_provides clear reset
+		build_provides getopt
+		
+		# We need to create a wrapper that intercepts -n, name, and replace it with something generic, eg 'libertine'
+		build_provides id
+		
+		# Something in here also segfaults
+		#build_provides date
+		#build_provides sleep uname printenv
+		
+		# Possibly ok
+		#build_provides expr seq sum df du expand unexpand fold nice nohup dc time zcat
+		
+		
+		# Seg faults - even when building with all patches
+		# build_provides sh
+
+		
+		# Incapable of applying musl patches
+		# build_provides patch
+
+
+		build_provides cmp diff ed vi
+		build_provides sort uniq
+		build_provides head tail cat od tac wc base64
+		# xz is provided by build_xz_utils_xz
+		build_provides tar cpio gzip gunzip bzip2 bunzip2 bzcat unxz xzcat lzma unlzma lzcat lzop unlzop lzopcat unzip rpm2cpio uncompress
+		
+		# Weirdly, some configure scripts look for this tape tool
+		build_provides mt
+		
+		# musl-extras
+		build_provides getconf getent iconv
+	;;
+	
+	busybox)
+	
+		depends build_ccache
+		build_needs ccache
+		
+		depends build_musl_cross_make_build
+		build_needs "$libertine_build"-cc
+
+		depends build_musl_cross_make_host
+		#  "$libertine_host"-ranlib "$libertine_host"-as
+		build_needs "$libertine_host"-cc "$libertine_host"-ar "$libertine_host"-strip
+	;;
+	
+esac
+
+libertine_compile_build_busybox()
+{
+	_libertine_compile_busybox_internal "$(libertine_public_outputBuildSysrootPath)" "$libertine_build" false "-Werror=implicit-function-declaration -fno-strict-aliasing"
+}
+
+libertine_compile_busybox()
+{
+	_libertine_compile_busybox_internal "$(libertine_public_outputInitramfsPath)" "$libertine_host" true "$(libertine_public_hostCCompilerFlags '-static' '--static' '-Wl,-Bstatic' '-static-libgcc' '-D_GNU_SOURCE' '-ffunction-sections' '-fdata-sections' '-Wl,--gc-sections') -fno-strict-aliasing"
+}
+
+build_needs sed cp mkdir
+_libertine_compile_busybox_internal()
+{
+	local outputSysroot="$1"
+	local target="$2"
+	local shouldStrip="$3"
+	local cFlags="$4"
+	
+	# Fix hardcoded references to gcc and introduce ccache
+	
+		if $shouldStrip; then
+			local hostCc="ccache $libertine_build-cc"
+			local crossCompileCc='ccache $(CROSS_COMPILE)cc'
+			local targetCc="ccache ${target}-cc"
+			local SKIP_STRIP=n
+		else
+			local hostCc='cc'
+			local crossCompileCc='cc'
+			local targetCc='cc'
+			local SKIP_STRIP=y
+		fi
+	
+		# HOSTCC is hardcoded to gcc
+		sed -i -e 's/= gcc/= '"$hostCc"'/g' "$(libertine_public_sourcePath)"/Makefile
+		
+		# CC is hardcoded to $(CROSS_COMPILE)gcc
+		sed -i -e 's/$(CROSS_COMPILE)gcc/'"$crossCompileCc"'/g' "$(libertine_public_sourcePath)"/Makefile "$(libertine_public_sourcePath)"/scripts/Makefile.IMA
+		
+		# Harcoded to what would be the build system's gcc, which seems wrong, as well, when surely it should be doing link tests for host system...
+		sed -i -e 's/gcc/'"$targetCc"'/g' "$(libertine_public_sourcePath)"/scripts/trylink
+	
+	# Install any extra programs
+	libertine_public_copy "$(libertine_public_packagePath)"/extras/. "$(libertine_public_sourcePath)"/
+	
+	# Patch in additional musl applets
+	local applet
+	local upperCaseConfigName
+	for applet in getconf getent iconv
+	do
+		local outputCFilePath="$(libertine_public_sourcePath)"/debianutils/"$applet".c
+		cp "$(libertine_public_packagePath)"/musl-extras/"$applet".busybox "$outputCFilePath"
+		
+		case "$applet" in
+			
+			iconv)
+				upperCaseConfigName=ICONV
+				sed -e 's/^int main(/#include "libbb.h"\nint '"$applet"'_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;\nint '"$applet"'_main(/g' "$(libertine_public_packagePath)"/musl-extras/"$applet".c >>"$outputCFilePath"
+			;;
+				
+			getconf)
+				upperCaseConfigName=GETCONF
+				sed -e 's/^int main(/#include "libbb.h"\nint '"$applet"'_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;\nint '"$applet"'_main(/g' "$(libertine_public_packagePath)"/musl-extras/"$applet".c >>"$outputCFilePath"
+			;;
+			
+			getent)
+				upperCaseConfigName=GETENT
+				# (previous line is 'int')
+				# Brittle
+				sed -e '/^int$/d' -e 's/^main(/#include "libbb.h"\nint '"$applet"'_main(int argc, char *argv[]) MAIN_EXTERNALLY_VISIBLE;\nint '"$applet"'_main(/g' "$(libertine_public_packagePath)"/musl-extras/"$applet".c >>"$outputCFilePath"
+			;;
+			
+			*)
+				core_exitError $core_commandLine_exitCode_SOFTWARE "No idea how to convert applet '$applet'"
+			;;
+			
+		esac
+				
+		local upperCaseConfigName="$(printf 'CONFIG_%s' "$applet" | tr a-z A-Z)"
+		libertine_public_menuconfig_adjust "$upperCaseConfigName" y false
+	done
+	
+	local outputFolderPath="$outputSysroot"/usr
+	mkdir -m 0755 -p "$outputFolderPath"
+	
+	if $shouldStrip; then
+		libertine_public_menuconfig_adjust CONFIG_CROSS_COMPILER_PREFIX "$target"- true
+		libertine_public_menuconfig_adjust CONFIG_SYSROOT "$(libertine_public_inputSysrootPath)" true
+	else
+		libertine_public_menuconfig_adjust CONFIG_CROSS_COMPILER_PREFIX '' true
+		libertine_public_menuconfig_adjust CONFIG_SYSROOT '' true
+	fi
+	libertine_public_menuconfig_adjust CONFIG_PREFIX "$outputFolderPath" true
+	libertine_public_menuconfig_adjust CONFIG_EXTRA_CFLAGS "$cFlags" true
+	
+	# Alpine Linux specific features we don't use
+	#libertine_public_menuconfig_adjust CONFIG_FEATURE_SU_NULLOK_SECURE y false
+	#libertine_public_menuconfig_adjust CONFIG_FEATURE_MODUTILS_BIN y false
+	
+	if [ "$target" = "$libertine_build" ]; then
+		libertine_public_menuconfig_adjust CONFIG_BUSYBOX_EXEC_PATH "$outputFolderPath"/bin/busybox true
+	fi
+	
+	pushd "$(libertine_public_sourcePath)"	
+		
+		libertine_public_make V=1 SKIP_STRIP="$SKIP_STRIP"
+		
+		libertine_public_make V=1 SKIP_STRIP="$SKIP_STRIP" install
+		
+	popd
+}

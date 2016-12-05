@@ -1,0 +1,25 @@
+/* vi: set sw=4 ts=4: */
+/*
+ * nologin implementation for busybox
+ *
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
+ */
+
+//config:config GETCONF
+//config:	bool "getconf"
+//config:	default y
+//config:	help
+//config:	  getconf is used when building gcc
+
+//applet:IF_GETCONF(APPLET(getconf, BB_DIR_USR_BIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_GETCONF) += getconf.o
+
+//usage:#define getconf_trivial_usage
+//usage:       "getconf VALUE or getconf -a"
+//usage:#define getconf_full_usage "\n\n"
+//usage:       "getconf VALUE"
+//usage:     "\n	-a		Get all values"
+//usage:
+//usage:#define getconf_example_usage
+//usage:       "$ getconf _POSIX_V6_ILP32_OFF32\n"

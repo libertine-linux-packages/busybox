@@ -1,0 +1,83 @@
+# This file is part of libertine linux's package busybox. It is subject to the licence terms in the COPYRIGHT file found in the top-level directory of this distribution and at https://raw.githubusercontent.com/libertine-linux-packages/busybox/master/COPYRIGHT. No part of libertine linux's package busybox, including this file, may be copied, modified, propagated, or distributed except according to the terms contained in the COPYRIGHT file.
+# Copyright © 2016 The developers of libertine linux's package busybox. See the COPYRIGHT file in the top-level directory of this distribution and at https://raw.githubusercontent.com/libertine-linux-packages/busybox/master/COPYRIGHT.
+
+
+init_dnsd_start()
+{
+	if [ -f /var/run/dnsd.pid ]; then
+		return 0
+	fi
+	
+	local DNSD_CONF_VERBOSE='false'
+	local DNSD_CONF_TTL=''
+	local DNSD_CONF_PORT=''
+	local DNSD_CONF_ADDRESS=''
+	local DNSD_CONF_SUCCESSFUL_REPLIES_ONLY='false'
+
+	if [ -s /etc/dnsd.daemon.conf ]; then
+		. /etc/dnsd.daemon.conf 2>/dev/null || true
+	fi
+	
+	# Since we are source'd by /etc/init.d/rcS, we can rely on this being present
+	libertine_init_createCombinedEtcFile /etc dnsd.conf 0644 default
+	
+	set -- -d
+	
+	if $DNSD_CONF_VERBOSE; then
+		set -- "$@" -v
+	fi
+	
+	if [ -n "$DNSD_CONF_TTL" ]; then
+		set -- "$@" -t "$DNSD_CONF_TTL"
+	fi
+	
+	if [ -n "$DNSD_CONF_PORT" ]; then
+		set -- "$@" -p "$DNSD_CONF_PORT"
+	fi
+	
+	if [ -n "$DNSD_CONF_ADDRESS" ]; then
+		set -- "$@" -i "$DNSD_CONF_ADDRESS"
+	fi
+	
+	if $DNSD_CONF_SUCCESSFUL_REPLIES_ONLY; then
+		set -- "$@" -s
+	fi
+	
+	set -- "$@" -c /dnsd.conf
+	
+	mkdir -m 0755 -p /var/run/dnsd
+	cp /etc/dnsd.conf /var/run/dnsd
+	start-stop-daemon --start --quiet --exec dnsd --chroot /var/run/dnsd --make-pidfile --pidfile /var/run/dnsd.pid --user root --chuid root:root -- "$@"
+}
+
+init_dnsd_stop()
+{
+	start-stop-daemon --stop --quiet --exec dnsd --pidfile /var/run/dnsd.pid
+	rm -rf /var/run/dnsd.pid
+}
+
+init_dnsd_main()
+{
+	. /usr/lib/rc.functions
+	
+	if [ "$#" -eq 0 ]; then
+		local action='status'
+	else
+		local action="$1"
+		shift 1
+	fi
+	
+	case "$action" in
+		
+		start)
+			init_dnsd_start "$@"
+		;;
+		
+		stop)
+			init_dnsd_stop "$@"
+		;;
+		
+	esac
+}
+
+init_dnsd_main "$@"

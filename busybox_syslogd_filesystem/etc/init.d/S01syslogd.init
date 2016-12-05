@@ -1,0 +1,100 @@
+# This file is part of libertine linux's package busybox. It is subject to the licence terms in the COPYRIGHT file found in the top-level directory of this distribution and at https://raw.githubusercontent.com/libertine-linux-packages/busybox/master/COPYRIGHT. No part of libertine linux's package busybox, including this file, may be copied, modified, propagated, or distributed except according to the terms contained in the COPYRIGHT file.
+# Copyright © 2016 The developers of libertine linux's package busybox. See the COPYRIGHT file in the top-level directory of this distribution and at https://raw.githubusercontent.com/libertine-linux-packages/busybox/master/COPYRIGHT.
+
+
+SYSLOGD_CONF_LOG_REMOTELY_TO()
+{
+	while [ $# -ne 0 ]
+	do
+		_SYSLOGD_CONF_LISTEN_ON="$_SYSLOGD_CONF_LOG_REMOTELY_TO $1"
+		shift 1
+	done	
+}
+
+init_syslogd_start()
+{
+	if [ -f /var/run/syslogd.pid ]; then
+		return 0
+	fi
+	
+	# eg syslog:514; not secure, sadly
+	local _SYSLOGD_CONF_LOG_REMOTELY_TO=''
+	
+	local SYSLOGD_CONF_LOG_LOCALLY=true
+	local SYSLOGD_CONF_MAXIMUM_ROTATED_LOGS=99
+	local SYSLOGD_CONF_MAXIMUM_ROTATED_SIZE_KB=200
+	local SYSLOGD_CONF_PRIORITY=1
+	local SYSLOGD_CONF_SMALLER_OUTPUT='false'
+	local SYSLOGD_CONF_DROP_DUPLICATES='true'
+	
+	if [ -s /etc/syslogd.daemon.conf ]; then
+		. /etc/syslogd.daemon.conf 2>/dev/null || true
+	fi
+	
+	set --
+	
+	if [ -n "$_SYSLOGD_CONF_LOG_REMOTELY_TO" ]; then
+		local hostPort
+		# lack of quotes is deliberate
+		IFS=' ' for hostPort in $_SYSLOGD_CONF_LOG_REMOTELY_TO
+		do
+			set -- "$@" -R "$hostPort"
+		done
+	fi
+	
+	if $SYSLOGD_CONF_LOG_LOCALLY; then
+		set -- "$@" -L
+		set -- "$@" -b "$SYSLOGD_CONF_MAXIMUM_ROTATED_LOGS"
+		set -- "$@" -s "$SYSLOGD_CONF_MAXIMUM_ROTATED_SIZE_KB"
+	fi
+	
+	set -- "$@" -l "$SYSLOGD_CONF_PRIORITY"
+	
+	if $SYSLOGD_CONF_SMALLER_OUTPUT; then
+		set -- "$@" -S
+	fi
+	
+	if $SYSLOGD_CONF_DROP_DUPLICATES; then
+		set -- "$@" -D
+	fi
+
+	if command -v syslogd 1>/dev/null 2>/dev/null; then
+		start-stop-daemon --start --quiet --exec syslogd --pidfile /var/run/syslogd.pid  -- "$@" -f /etc/syslog.conf
+	fi
+}
+
+init_syslogd_stop()
+{
+	if command -v syslogd 1>/dev/null 2>/dev/null; then
+		if [ -s /var/run/syslogd.pid ]; then
+			start-stop-daemon --stop --quiet --exec syslogd --pidfile /var/run/syslogd.pid
+		fi
+	fi
+	rm -rf /var/run/syslogd.pid
+}
+
+init_syslogd_main()
+{
+	. /usr/lib/rc.functions
+	
+	if [ "$#" -eq 0 ]; then
+		local action='status'
+	else
+		local action="$1"
+		shift 1
+	fi
+	
+	case "$action" in
+		
+		start)
+			init_syslogd_start "$@"
+		;;
+		
+		stop)
+			init_syslogd_stop "$@"
+		;;
+		
+	esac
+}
+
+init_syslogd_main "$@"

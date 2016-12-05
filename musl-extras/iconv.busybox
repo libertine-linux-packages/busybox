@@ -1,0 +1,29 @@
+/* vi: set sw=4 ts=4: */
+/*
+ * nologin implementation for busybox
+ *
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
+ */
+
+//config:config ICONV
+//config:	bool "iconv"
+//config:	default y
+//config:	help
+//config:	  iconv is used when building gcc
+
+//applet:IF_ICONV(APPLET(iconv, BB_DIR_USR_BIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_ICONV) += iconv.o
+
+//usage:#define iconv_trivial_usage
+//usage:       "iconv -f FROM_CHARSET -t TO_CHARSET | iconv -l;  -c -s are ignored"
+//usage:#define iconv_full_usage "\n\n"
+//usage:       "iconv"
+//usage:     "\n	-f FROM_CHARSET a charset musl supports"
+//usage:     "\n	-t TO_CHARSET a charset musl supports"
+//usage:     "\n	-l List supported charsets"
+//usage:     "\n	-c Ignored for compatibility"
+//usage:     "\n	-s Ignored for compatibility"
+//usage:
+//usage:#define iconv_example_usage
+//usage:       "$ iconv -f US_ASCII -t UTF-8\n"

@@ -1,0 +1,48 @@
+# This file is part of libertine linux's package busybox. It is subject to the licence terms in the COPYRIGHT file found in the top-level directory of this distribution and at https://raw.githubusercontent.com/libertine-linux-packages/busybox/master/COPYRIGHT. No part of libertine linux's package busybox, including this file, may be copied, modified, propagated, or distributed except according to the terms contained in the COPYRIGHT file.
+# Copyright © 2016 The developers of libertine linux's package busybox. See the COPYRIGHT file in the top-level directory of this distribution and at https://raw.githubusercontent.com/libertine-linux-packages/busybox/master/COPYRIGHT.
+
+
+init_crond_start()
+{
+	if [ -f /var/run/crond.pid ]; then
+		return 0
+	fi
+
+	local CROND_CONF_PRIORITY='8'
+
+	if [ -s /etc/crond.daemon.conf ]; then
+		. /etc/crond.daemon.conf 2>/dev/null || true
+	fi
+	
+	start-stop-daemon --start --quiet --exec crond --pidfile /var/run/crond.pid --user cron --chuid cron:cron  -- -b -S -l "$CROND_CONF_PRIORITY"
+}
+
+init_crond_stop()
+{
+	start-stop-daemon --stop --quiet --exec crond --pidfile /var/run/crond.pid
+	rm -rf /var/run/crond.pid
+}
+
+init_crond_main()
+{
+	if [ "$#" -eq 0 ]; then
+		local action='status'
+	else
+		local action="$1"
+		shift 1
+	fi
+	
+	case "$action" in
+		
+		start)
+			init_crond_start "$@"
+		;;
+		
+		stop)
+			init_crond_stop "$@"
+		;;
+		
+	esac
+}
+
+init_crond_main "$@"

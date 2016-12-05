@@ -1,0 +1,54 @@
+# This file is part of libertine linux's package busybox. It is subject to the licence terms in the COPYRIGHT file found in the top-level directory of this distribution and at https://raw.githubusercontent.com/libertine-linux-packages/busybox/master/COPYRIGHT. No part of libertine linux's package busybox, including this file, may be copied, modified, propagated, or distributed except according to the terms contained in the COPYRIGHT file.
+# Copyright © 2016 The developers of libertine linux's package busybox. See the COPYRIGHT file in the top-level directory of this distribution and at https://raw.githubusercontent.com/libertine-linux-packages/busybox/master/COPYRIGHT.
+
+
+init_klogd_start()
+{
+	if [ -f /var/run/klogd.pid ]; then
+		return 0
+	fi
+
+	local KLOGD_CONF_PRIORITY='8'
+
+	if [ -s /etc/klogd.daemon.conf ]; then
+		. /etc/klogd.daemon.conf 2>/dev/null || true
+	fi
+
+	if command -v klogd 1>/dev/null 2>/dev/null; then
+		start-stop-daemon --start --quiet --exec klogd --pidfile /var/run/klogd.pid  -- -c "$KLOGD_CONF_PRIORITY"
+	fi
+}
+
+init_klogd_stop()
+{
+	if command -v klogd 1>/dev/null 2>/dev/null; then
+		if [ -s /var/run/klogd.pid ]; then
+			start-stop-daemon --stop --quiet --exec klogd --pidfile /var/run/klogd.pid
+		fi
+	fi
+	rm -rf /var/run/klogd.pid
+}
+
+init_klogd_main()
+{
+	if [ "$#" -eq 0 ]; then
+		local action='status'
+	else
+		local action="$1"
+		shift 1
+	fi
+	
+	case "$action" in
+		
+		start)
+			init_klogd_start "$@"
+		;;
+		
+		stop)
+			init_klogd_stop "$@"
+		;;
+		
+	esac
+}
+
+init_klogd_main "$@"

@@ -1,0 +1,56 @@
+# This file is part of libertine linux's package busybox. It is subject to the licence terms in the COPYRIGHT file found in the top-level directory of this distribution and at https://raw.githubusercontent.com/libertine-linux-packages/busybox/master/COPYRIGHT. No part of libertine linux's package busybox, including this file, may be copied, modified, propagated, or distributed except according to the terms contained in the COPYRIGHT file.
+# Copyright © 2016 The developers of libertine linux's package busybox. See the COPYRIGHT file in the top-level directory of this distribution and at https://raw.githubusercontent.com/libertine-linux-packages/busybox/master/COPYRIGHT.
+
+
+init_watchdog_start()
+{
+	if [ -f /var/run/watchdog.pid ]; then
+		return 0
+	fi
+
+	local WATCHDOG_CONF_REBOOT='60'
+	local WATCHDOG_CONF_RESET='30'
+	local WATCHDOG_CONF_DEVICE='/dev/watchdog'
+
+	if [ -s /etc/watchdog.daemon.conf ]; then
+		. /etc/watchdog.daemon.conf 2>/dev/null || true
+	fi
+
+	if [ ! -c "$WATCHDOG_CONF_DEVICE" ]; then
+		return 0
+	fi
+	
+	start-stop-daemon --start --quiet --exec watchdog --pidfile /var/run/watchdog.pid --user watchdog --chuid watchdog:watchdog  -- -T $WATCHDOG_CONF_REBOOT -t $WATCHDOG_CONF_RESET "$WATCHDOG_CONF_DEVICE"
+}
+
+init_watchdog_stop()
+{
+	start-stop-daemon --stop --quiet --exec watchdog --pidfile /var/run/watchdog.pid
+	rm -rf /var/run/watchdog.pid
+}
+
+init_watchdog_main()
+{
+	. /usr/lib/rc.functions
+	
+	if [ "$#" -eq 0 ]; then
+		local action='status'
+	else
+		local action="$1"
+		shift 1
+	fi
+	
+	case "$action" in
+		
+		start)
+			init_watchdog_start "$@"
+		;;
+		
+		stop)
+			init_watchdog_stop "$@"
+		;;
+		
+	esac
+}
+
+init_watchdog_main "$@"

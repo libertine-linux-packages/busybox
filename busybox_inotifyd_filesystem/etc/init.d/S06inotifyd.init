@@ -1,0 +1,119 @@
+# This file is part of libertine linux's package busybox. It is subject to the licence terms in the COPYRIGHT file found in the top-level directory of this distribution and at https://raw.githubusercontent.com/libertine-linux-packages/busybox/master/COPYRIGHT. No part of libertine linux's package busybox, including this file, may be copied, modified, propagated, or distributed except according to the terms contained in the COPYRIGHT file.
+# Copyright © 2016 The developers of libertine linux's package busybox. See the COPYRIGHT file in the top-level directory of this distribution and at https://raw.githubusercontent.com/libertine-linux-packages/busybox/master/COPYRIGHT.
+
+
+init_inotifyd_start()
+{
+	if ! command -v nohup 1>/dev/null 2>/dev/null; then
+		return 0
+	fi
+	
+	if ! command -v inotifyd 1>/dev/null 2>/dev/null; then
+		return 0
+	fi
+	
+	if [ -f /var/run/inotifyd.pids ]; then
+		return 0
+	fi
+	
+	printf '' >/var/run/inotifyd.pids
+	
+	set +f
+	local configurationFilePath
+	for configurationFilePath in /etc/inotifyd.daemon.conf.d/*.inotifyd.daemon.conf
+	do
+		set -f
+		if [ ! -f "$configurationFilePath" ]; then
+			continue
+		fi
+		if [ ! -s "$configurationFilePath" ]; then
+			continue
+		fi
+		local user group program line
+		while IFS=' ' read -r user group program line
+		do
+			if [ ! -x "$program" ]; then
+				continue
+			fi
+			if ! awk -F: '{print $1}' /etc/passwd | grep -q ^"$user"$; then
+				continue
+			fi
+			if ! awk -F: '{print $1}' /etc/group | grep -q ^"$group"$; then
+				continue
+			fi
+
+			if [ -z "$line" ]; then
+				continue
+			fi
+			
+			case "$line" in
+				
+				'#'*)
+					continue
+				;;
+				
+			esac
+			
+			# double quotes deliberately missing; a line is USER GROUP PROG FILE:MASK FILE:MASK ...
+			IFS=' ' set -- $line
+			if [ $# -eq 0 ]; then
+				continue
+			fi
+			
+			if [ "$user" = 'root' ]; then
+				if [ "$group" = 'root' ]; then
+					nohup inotifyd "$program" "$@" 1>/dev/null 2>/dev/null &
+					printf '%s\n' "$!" >>/var/run/inotifyd.pids
+					continue
+				fi
+			fi
+			
+			# sudo is not something we want to necessarily force a hard dependency on
+			if ! command -v sudo 1>/dev/null 2>/dev/null; then
+				continue
+			fi
+			nohup sudo -u "$user" -g "$group" inotifyd "$program" "$@" 1>/dev/null 2>/dev/null &
+			printf '%s\n' "$!" >>/var/run/inotifyd.pids
+		done
+	done
+	set -f
+}
+
+init_inotifyd_stop()
+{
+	if [ ! -f /var/run/inotifyd.pids ]; then
+		return 0
+	fi
+	
+	local pid
+	while IFS='' read -r pid
+	do
+		kill "$pid" 1>/dev/null 2>/dev/null || true
+	done </var/run/inotifyd.pids
+	
+	rm /var/run/inotifyd.pids
+}
+
+init_inotifyd_main()
+{
+	if [ "$#" -eq 0 ]; then
+		local action='status'
+	else
+		local action="$1"
+		shift 1
+	fi
+	
+	case "$action" in
+		
+		start)
+			init_inotifyd_start "$@"
+		;;
+		
+		stop)
+			init_inotifyd_stop "$@"
+		;;
+		
+	esac
+}
+
+init_inotifyd_main "$@"

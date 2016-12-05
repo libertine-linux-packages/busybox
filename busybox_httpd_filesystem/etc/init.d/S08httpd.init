@@ -1,0 +1,127 @@
+# This file is part of libertine linux's package busybox. It is subject to the licence terms in the COPYRIGHT file found in the top-level directory of this distribution and at https://raw.githubusercontent.com/lemonrock/busybox/master/COPYRIGHT. No part of libertine linux's package busybox, including this file, may be copied, modified, propagated, or distributed except according to the terms contained in the COPYRIGHT file.
+# Copyright © 2016 The developers of libertine linux's package busybox. See the COPYRIGHT file in the top-level directory of this distribution and at https://raw.githubusercontent.com/lemonrock/busybox/master/COPYRIGHT.
+
+
+init_httpd_start()
+{
+	if ! command -v nohup 1>/dev/null 2>/dev/null; then
+		return 0
+	fi
+	
+	if [ -f /var/run/httpd.pids ]; then
+		return 0
+	fi
+	
+	printf '' >/var/run/httpd.pids
+	
+	set +f
+	local configurationFilePath
+	for configurationFilePath in /etc/httpd/daemon.conf.d/*.daemon.conf
+	do
+		set -f
+		if [ ! -f "$configurationFilePath" ]; then
+			continue
+		fi
+		
+		if [ ! -s "$configurationFilePath" ]; then
+			continue
+		fi
+		
+		local fileName="${configurationFilePath##*/}"
+		local configurationName="${fileName%%.*}"
+		
+		local HTTPD_CONF_HOME="/srv/httpd"/"$configurationName"
+		local HTTPD_CONF_FILE_PATH="/etc/httpd/conf.d/$configurationName"
+		
+		local HTTPD_CONF_USER='httpd'
+		local HTTPD_CONF_GROUP='httpd'
+		local HTTPD_CONF_VERBOSITY='0'
+		local HTTPD_CONF_AUTH_REALM=''
+		local HTTPD_CONF_AUTH_MD5=''
+		local HTTPD_CONF_BIND='80'
+		
+		. "$configurationFilePath" 2>/dev/null || true
+		
+		local uid="$(awk -F: '$1 ~ /^'"$HTTPD_CONF_USER"'$/ {print $3}' /etc/passwd)"
+		if [ -z "$uid" ]; then
+			continue
+		fi
+		
+		local gid="$(awk -F: '$1 ~ /^'"$HTTPD_CONF_GROUP"'$/ {print $3}' /etc/group)"
+		if [ -z "$gid" ]; then
+			continue
+		fi
+
+		set --
+
+		set -- "$@" -u "$uid":"$gid"
+		
+		case "$HTTPD_CONF_VERBOSITY" in
+		
+			true|1)
+				set -- "$@" -v
+			;;
+		
+			very|2)
+				set -- "$@" -vv
+			;;
+		
+		esac
+	
+		if [ -n "$HTTPD_CONF_AUTH_REALM" ]; then
+			set -- "$@" -r "$HTTPD_CONF_AUTH_REALM"
+		fi
+		if [ -n "$HTTPD_CONF_AUTH_MD5" ]; then
+			set -- "$@" -m "$HTTPD_CONF_AUTH_MD5"
+		fi
+	
+		set -- "$@" -p "$HTTPD_CONF_BIND"
+	
+		set -- "$@" -h "$HTTPD_CONF_HOME"
+	
+		set -- "$@" -c "$HTTPD_CONF_FILE_PATH"
+		
+		nohup httpd "$@" 1>/dev/null 2>/dev/null &
+		printf '%s\n' "$!" >>/var/run/httpd.pids
+	done
+	set -f
+}
+
+init_httpd_stop()
+{
+	if [ ! -f /var/run/httpd.pids ]; then
+		return 0
+	fi
+	
+	local pid
+	while IFS='' read -r pid
+	do
+		kill "$pid" 1>/dev/null 2>/dev/null || true
+	done </var/run/httpd.pids
+	
+	rm -rf /var/run/httpd.pids
+}
+
+init_httpd_main()
+{
+	if [ "$#" -eq 0 ]; then
+		local action='status'
+	else
+		local action="$1"
+		shift 1
+	fi
+	
+	case "$action" in
+		
+		start)
+			init_httpd_start "$@"
+		;;
+		
+		stop)
+			init_httpd_stop "$@"
+		;;
+		
+	esac
+}
+
+init_httpd_main "$@"

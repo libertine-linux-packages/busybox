@@ -1,0 +1,26 @@
+/* vi: set sw=4 ts=4: */
+/*
+ * nologin implementation for busybox
+ *
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
+ */
+
+//config:config GETENT
+//config:	bool "getent"
+//config:	default y
+//config:	help
+//config:	  getent is used when building gcc
+
+//applet:IF_GETENT(APPLET(getent, BB_DIR_USR_BIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_GETENT) += getent.o
+
+//usage:#define getent_trivial_usage
+//usage:       "getent DATABASE [KEY]"
+//usage:#define getent_full_usage "\n\n"
+//usage:       "getent DATABASE [KEY]"
+//usage:     "\n	DATABASE can be one of ethers group hosts networks passwd protocols services shells"
+//usage:     "\n	KEY will retrieve an entry. Optional."
+//usage:
+//usage:#define getent_example_usage
+//usage:       "$ getent passwd root\n"
