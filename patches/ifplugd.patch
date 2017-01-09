@@ -1,0 +1,30 @@
+--- ./networking/ifplugd.c	2016-12-15 13:40:54.000000000 +0000
++++ ./networking/ifplugd.new.c	2016-12-20 13:40:09.000000000 +0000
+@@ -34,22 +34,14 @@
+ #include "libbb.h"
+ 
+ #include "fix_u32.h"
++// Based on patch from http://lists.busybox.net/pipermail/busybox/attachments/20140127/34b07aa5/attachment.ksh but adjusted for newer musl and BusybOx
++#ifdef HAVE_NET_ETHERNET_H
++# include <net/ethernet.h>
++#endif
++#include <syslog.h>
+ #include <linux/if.h>
+ #include <linux/mii.h>
+ #include <linux/ethtool.h>
+-#ifdef HAVE_NET_ETHERNET_H
+-/* musl breakage:
+- * In file included from /usr/include/net/ethernet.h:10,
+- *                  from networking/ifplugd.c:41:
+- * /usr/include/netinet/if_ether.h:96: error: redefinition of 'struct ethhdr'
+- *
+- * Build succeeds without it on musl. Commented it out.
+- * If on your system you need it, consider removing <linux/ethtool.h>
+- * and copy-pasting its definitions here (<linux/ethtool.h> is what pulls in
+- * conflicting definition of struct ethhdr on musl).
+- */
+-/* # include <net/ethernet.h> */
+-#endif
+ #include <linux/netlink.h>
+ #include <linux/rtnetlink.h>
+ #include <linux/sockios.h>

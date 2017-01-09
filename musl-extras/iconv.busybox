@@ -1,6 +1,6 @@
 /* vi: set sw=4 ts=4: */
 /*
- * nologin implementation for busybox
+ * iconv implementation for busybox
  *
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
