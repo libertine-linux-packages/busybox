@@ -18,9 +18,6 @@ init_dnsd_start()
 		. /etc/dnsd.daemon.conf 2>/dev/null || true
 	fi
 	
-	# Since we are source'd by /etc/init.d/rcS, we can rely on this being present
-	libertine_init_createCombinedEtcFile /etc dnsd.conf 0644 default
-	
 	set -- -d
 	
 	if $DNSD_CONF_VERBOSE; then
@@ -47,7 +44,7 @@ init_dnsd_start()
 	
 	mkdir -m 0755 -p /var/run/dnsd
 	cp /etc/dnsd.conf /var/run/dnsd
-	start-stop-daemon --start --quiet --exec dnsd --chroot /var/run/dnsd --make-pidfile --pidfile /var/run/dnsd.pid --user root --chuid root:root -- "$@"
+	taskset 0x00000001 start-stop-daemon --start --quiet --exec dnsd --chroot /var/run/dnsd --make-pidfile --pidfile /var/run/dnsd.pid --user root --chuid root:root -- "$@"
 }
 
 init_dnsd_stop()
@@ -58,8 +55,6 @@ init_dnsd_stop()
 
 init_dnsd_main()
 {
-	. /usr/lib/rc.functions
-	
 	if [ "$#" -eq 0 ]; then
 		local action='status'
 	else

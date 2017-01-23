@@ -15,7 +15,7 @@ init_klogd_start()
 	fi
 
 	if command -v klogd 1>/dev/null 2>/dev/null; then
-		start-stop-daemon --start --quiet --exec klogd --pidfile /var/run/klogd.pid  -- -c "$KLOGD_CONF_PRIORITY"
+		taskset 0x00000001 start-stop-daemon --start --quiet --exec klogd --pidfile /var/run/klogd.pid  -- -c "$KLOGD_CONF_PRIORITY"
 	fi
 }
 

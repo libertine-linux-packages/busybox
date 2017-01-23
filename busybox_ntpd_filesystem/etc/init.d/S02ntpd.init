@@ -37,9 +37,7 @@ init_ntpd_start()
 		fi
 	fi
 	
-	# Since we are source'd by /etc/init.d/rcS, we can rely on this being present
-	libertine_init_createCombinedEtcFile /etc ntp.conf 0644 default
-	start-stop-daemon --start --quiet --exec ntpd --pidfile /var/run/ntpd.pid --user ntp --chuid ntp:ntp -- "$@"
+	taskset 0x00000001 start-stop-daemon --start --quiet --exec ntpd --pidfile /var/run/ntpd.pid --user ntp --chuid ntp:ntp -- "$@"
 }
 
 init_ntpd_stop()
@@ -50,8 +48,6 @@ init_ntpd_stop()
 
 init_ntpd_main()
 {
-	. /usr/lib/rc.functions
-	
 	if [ "$#" -eq 0 ]; then
 		local action='status'
 	else

@@ -20,7 +20,7 @@ init_watchdog_start()
 		return 0
 	fi
 	
-	start-stop-daemon --start --quiet --exec watchdog --pidfile /var/run/watchdog.pid --user watchdog --chuid watchdog:watchdog  -- -T $WATCHDOG_CONF_REBOOT -t $WATCHDOG_CONF_RESET "$WATCHDOG_CONF_DEVICE"
+	taskset 0x00000001 start-stop-daemon --start --quiet --exec watchdog --pidfile /var/run/watchdog.pid --user watchdog --chuid watchdog:watchdog  -- -T $WATCHDOG_CONF_REBOOT -t $WATCHDOG_CONF_RESET "$WATCHDOG_CONF_DEVICE"
 }
 
 init_watchdog_stop()
@@ -31,8 +31,6 @@ init_watchdog_stop()
 
 init_watchdog_main()
 {
-	. /usr/lib/rc.functions
-	
 	if [ "$#" -eq 0 ]; then
 		local action='status'
 	else

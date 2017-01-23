@@ -14,7 +14,7 @@ init_crond_start()
 		. /etc/crond.daemon.conf 2>/dev/null || true
 	fi
 	
-	start-stop-daemon --start --quiet --exec crond --pidfile /var/run/crond.pid --user cron --chuid cron:cron  -- -b -S -l "$CROND_CONF_PRIORITY"
+	taskset 0x00000001 start-stop-daemon --start --quiet --exec crond --pidfile /var/run/crond.pid --user cron --chuid cron:cron  -- -b -S -l "$CROND_CONF_PRIORITY"
 }
 
 init_crond_stop()

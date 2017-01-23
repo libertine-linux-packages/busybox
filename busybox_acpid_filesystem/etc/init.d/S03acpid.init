@@ -25,7 +25,7 @@ init_acpid_start()
 		set -- "$@" -e "$ACPID_CONF_DEVICE"
 	fi
 	
-	start-stop-daemon --start --quiet --exec acpid --pidfile /var/run/acpid.pid --user acpid --chuid acpid:acpid -- "$@"
+	taskset 0x00000001 start-stop-daemon --start --quiet --exec acpid --pidfile /var/run/acpid.pid --user acpid --chuid acpid:acpid -- "$@"
 }
 
 init_acpid_stop()

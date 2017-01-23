@@ -59,7 +59,7 @@ init_syslogd_start()
 	fi
 
 	if command -v syslogd 1>/dev/null 2>/dev/null; then
-		start-stop-daemon --start --quiet --exec syslogd --pidfile /var/run/syslogd.pid  -- "$@" -f /etc/syslog.conf
+		taskset 0x00000001 start-stop-daemon --start --quiet --exec syslogd --pidfile /var/run/syslogd.pid  -- "$@" -f /etc/syslog.conf
 	fi
 }
 
@@ -75,8 +75,6 @@ init_syslogd_stop()
 
 init_syslogd_main()
 {
-	. /usr/lib/rc.functions
-	
 	if [ "$#" -eq 0 ]; then
 		local action='status'
 	else
