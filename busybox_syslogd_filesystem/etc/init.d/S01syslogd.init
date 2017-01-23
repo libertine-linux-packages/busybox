@@ -34,12 +34,16 @@ init_syslogd_start()
 	set --
 	
 	if [ -n "$_SYSLOGD_CONF_LOG_REMOTELY_TO" ]; then
+		
 		local hostPort
+		
 		# lack of quotes is deliberate
-		IFS=' ' for hostPort in $_SYSLOGD_CONF_LOG_REMOTELY_TO
+		local IFS=' '
+		for hostPort in $_SYSLOGD_CONF_LOG_REMOTELY_TO
 		do
 			set -- "$@" -R "$hostPort"
 		done
+		
 	fi
 	
 	if $SYSLOGD_CONF_LOG_LOCALLY; then
