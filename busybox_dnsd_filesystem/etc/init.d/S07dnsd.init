@@ -4,7 +4,7 @@
 
 init_dnsd_start()
 {
-	if [ -f /var/run/dnsd.pid ]; then
+	if [ -f "$pidFilePath" ]; then
 		return 0
 	fi
 	
@@ -13,9 +13,10 @@ init_dnsd_start()
 	local DNSD_CONF_PORT=''
 	local DNSD_CONF_ADDRESS=''
 	local DNSD_CONF_SUCCESSFUL_REPLIES_ONLY='false'
-
-	if [ -s /etc/dnsd.daemon.conf ]; then
-		. /etc/dnsd.daemon.conf 2>/dev/null || true
+	
+	local confFilePath='/etc/dnsd.daemon.conf'
+	if [ -s "$confFilePath" ]; then
+		. "$confFilePath" 2>/dev/null || true
 	fi
 	
 	set -- -d
@@ -40,17 +41,15 @@ init_dnsd_start()
 		set -- "$@" -s
 	fi
 	
-	set -- "$@" -c /dnsd.conf
+	set -- "$@" -c /etc/dnsd.conf
 	
-	mkdir -m 0755 -p /var/run/dnsd
-	cp /etc/dnsd.conf /var/run/dnsd
-	taskset 0x00000001 start-stop-daemon --start --quiet --exec dnsd --chroot /var/run/dnsd --make-pidfile --pidfile /var/run/dnsd.pid --user root --chuid root:root -- "$@"
+	start-stop-daemon --start --quiet --exec dnsd --make-pidfile --pidfile "$pidFilePath" -- "$@"
 }
 
 init_dnsd_stop()
 {
-	start-stop-daemon --stop --quiet --exec dnsd --pidfile /var/run/dnsd.pid
-	rm -rf /var/run/dnsd.pid
+	start-stop-daemon --stop --quiet --exec dnsd --pidfile "$pidFilePath"
+	rm -rf "$pidFilePath"
 }
 
 init_dnsd_main()
@@ -61,6 +60,8 @@ init_dnsd_main()
 		local action="$1"
 		shift 1
 	fi
+	
+	local pidFilePath='/var/run/dnsd.pid'
 	
 	case "$action" in
 		

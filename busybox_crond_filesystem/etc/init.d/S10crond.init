@@ -4,7 +4,7 @@
 
 init_crond_start()
 {
-	if [ -f /var/run/crond.pid ]; then
+	if [ -f "$pidFilePath" ]; then
 		return 0
 	fi
 
@@ -14,13 +14,17 @@ init_crond_start()
 		. /etc/crond.daemon.conf 2>/dev/null || true
 	fi
 	
-	taskset 0x00000001 start-stop-daemon --start --quiet --exec crond --pidfile /var/run/crond.pid --user cron --chuid cron:cron  -- -b -S -l "$CROND_CONF_PRIORITY"
+	taskset 0x00000001 start-stop-daemon --start --quiet --exec crond --pidfile "$pidFilePath" --user cron --chuid cron:cron -- -b -S -l "$CROND_CONF_PRIORITY"
 }
 
 init_crond_stop()
 {
-	start-stop-daemon --stop --quiet --exec crond --pidfile /var/run/crond.pid
-	rm -rf /var/run/crond.pid
+	if [ ! -e "$pidFilePath" ]; then
+		return 0
+	fi
+	
+	start-stop-daemon --stop --quiet --exec crond --pidfile "$pidFilePath"
+	rm -rf "$pidFilePath"
 }
 
 init_crond_main()
@@ -31,6 +35,8 @@ init_crond_main()
 		local action="$1"
 		shift 1
 	fi
+	
+	local pidFilePath='/var/run/crond.pid'
 	
 	case "$action" in
 		

@@ -4,7 +4,7 @@
 
 init_watchdog_start()
 {
-	if [ -f /var/run/watchdog.pid ]; then
+	if [ -f "$pidFilePath" ]; then
 		return 0
 	fi
 
@@ -20,13 +20,16 @@ init_watchdog_start()
 		return 0
 	fi
 	
-	taskset 0x00000001 start-stop-daemon --start --quiet --exec watchdog --pidfile /var/run/watchdog.pid --user watchdog --chuid watchdog:watchdog  -- -T $WATCHDOG_CONF_REBOOT -t $WATCHDOG_CONF_RESET "$WATCHDOG_CONF_DEVICE"
+	taskset 0x00000001 start-stop-daemon --start --quiet --exec watchdog --pidfile "$pidFilePath" --user watchdog --chuid watchdog:watchdog  -- -T $WATCHDOG_CONF_REBOOT -t $WATCHDOG_CONF_RESET "$WATCHDOG_CONF_DEVICE"
 }
 
 init_watchdog_stop()
 {
-	start-stop-daemon --stop --quiet --exec watchdog --pidfile /var/run/watchdog.pid
-	rm -rf /var/run/watchdog.pid
+	if [ ! -e "$pidFilePath" ]; then
+		return 0
+	fi
+	start-stop-daemon --stop --quiet --exec watchdog --pidfile "$pidFilePath"
+	rm -rf "$pidFilePath"
 }
 
 init_watchdog_main()
@@ -37,6 +40,8 @@ init_watchdog_main()
 		local action="$1"
 		shift 1
 	fi
+	
+	local pidFilePath='/var/run/watchdog.pid'
 	
 	case "$action" in
 		

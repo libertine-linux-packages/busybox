@@ -1,1 +1,1 @@
-watchdog:x:23:23:watchdog:/var/empty:/bin/false
+watchdog:x:23:23:GECOS:/var/empty:/bin/false

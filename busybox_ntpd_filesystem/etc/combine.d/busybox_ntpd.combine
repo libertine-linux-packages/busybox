@@ -1,1 +1,2 @@
 /etc ntp.conf 0644 default
+/etc ntpd-script 0600 nocombine

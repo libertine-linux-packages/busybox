@@ -1,0 +1,7 @@
+Place scripts in thise folder ending in '.ntpd-script'
+	
+We have "$stratum", "$freq_drift_ppm", "$poll_interval" and "$offset" in the environment
+
+These scripts run as root, and may be called as often as 0.002 seconds apart and at least every 11 minutes
+
+A typical use here might be to do hwclock --systohc; be aware this can be very slow

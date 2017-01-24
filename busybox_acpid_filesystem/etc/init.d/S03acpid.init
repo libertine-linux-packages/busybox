@@ -4,7 +4,7 @@
 
 init_acpid_start()
 {
-	if [ -f /var/run/acpid.pid ]; then
+	if [ -f "$pidFilePath" ]; then
 		return 0
 	fi
 	
@@ -25,13 +25,17 @@ init_acpid_start()
 		set -- "$@" -e "$ACPID_CONF_DEVICE"
 	fi
 	
-	taskset 0x00000001 start-stop-daemon --start --quiet --exec acpid --pidfile /var/run/acpid.pid --user acpid --chuid acpid:acpid -- "$@"
+	taskset 0x00000001 start-stop-daemon --start --quiet --exec acpid --pidfile "$pidFilePath" --user acpid --chuid acpid:acpid -- "$@"
 }
 
 init_acpid_stop()
 {
-	start-stop-daemon --stop --quiet --exec acpid --pidfile /var/run/acpid.pid
-	rm -rf /var/run/acpid.pid
+	if [ ! -e "$pidFilePath" ]; then
+		return 0
+	fi
+	
+	start-stop-daemon --stop --quiet --exec acpid --pidfile "$pidFilePath"
+	rm -rf "$pidFilePath"
 }
 
 init_acpid_main()
@@ -42,6 +46,8 @@ init_acpid_main()
 		local action="$1"
 		shift 1
 	fi
+	
+	local pidFilePath='/var/run/acpid.pid'
 	
 	case "$action" in
 		

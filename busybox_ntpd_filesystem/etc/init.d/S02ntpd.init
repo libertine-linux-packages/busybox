@@ -4,18 +4,19 @@
 
 init_ntpd_start()
 {
-	if [ -f /var/run/ntpd.pid ]; then
+	if [ -f "$pidFilePath" ]; then
 		return 0
 	fi
 	
 	local NTPD_CONF_VERBOSE='false'
 	local NTPD_CONF_HIGH_PRIORITY='true'
-	local NTPD_CONF_RUN_PROGRAM=''
 	local NTPD_CONF_RUN_AS_SERVER='false'
 	local NTPD_CONF_RUN_AS_SERVER_IFACE=''
-
-	if [ -s /etc/ntpd.daemon.conf ]; then
-		. /etc/ntpd.daemon.conf 2>/dev/null || true
+	
+	local configurationFilePath='/etc/ntpd.daemon.conf'
+	
+	if [ -s "$configurationFilePath" ]; then
+		. "$configurationFilePath" 2>/dev/null || true
 	fi
 	
 	set --
@@ -25,11 +26,9 @@ init_ntpd_start()
 	if $NTPD_CONF_HIGH_PRIORITY; then
 		set -- "$@" -N
 	fi
-	if [ -n "$NTPD_CONF_RUN_PROGRAM" ]; then
-		if [ -x "$NTPD_CONF_RUN_PROGRAM" ]; then
-			set -- "$@" -S "$NTPD_CONF_RUN_PROGRAM"
-		fi
-	fi
+	
+	set -- "$@" -S /usr/sbin/ntpd-script
+	
 	if $NTPD_CONF_RUN_AS_SERVER; then
 		set -- "$@" -l
 		if [ -n "$NTPD_CONF_RUN_AS_SERVER_IFACE" ]; then
@@ -37,13 +36,17 @@ init_ntpd_start()
 		fi
 	fi
 	
-	taskset 0x00000001 start-stop-daemon --start --quiet --exec ntpd --pidfile /var/run/ntpd.pid --user ntp --chuid ntp:ntp -- "$@"
+	taskset 0x00000001 start-stop-daemon --start --quiet --exec ntpd --pidfile "$pidFilePath" -- "$@"
 }
 
 init_ntpd_stop()
 {
-	start-stop-daemon --stop --quiet --exec ntpd --pidfile /var/run/ntpd.pid
-	rm -rf /var/run/ntpd.pid
+	if [ ! -e "$pidFilePath" ]; then
+		return 0
+	fi
+	
+	start-stop-daemon --stop --quiet --exec ntpd --pidfile "$pidFilePath"
+	rm -rf "$pidFilePath"
 }
 
 init_ntpd_main()
@@ -54,6 +57,8 @@ init_ntpd_main()
 		local action="$1"
 		shift 1
 	fi
+	
+	local pidFilePath='/var/run/ntpd.pid'
 	
 	case "$action" in
 		

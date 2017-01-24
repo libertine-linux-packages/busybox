@@ -1,1 +1,1 @@
-httpd:x:89:89:httpd:/var/empty:/usr/bin/false
+httpd:x:89:89:GECOS:/var/empty:/usr/bin/false
