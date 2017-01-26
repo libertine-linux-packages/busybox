@@ -197,4 +197,8 @@ _libertine_compile_busybox_internal()
 		libertine_public_make V=1 SKIP_STRIP="$SKIP_STRIP" install
 		
 	popd
+	
+	if $shouldStrip; then
+		libertine_public_secureBinary "$outputSysroot"/usr/bin/busybox
+	fi
 }
