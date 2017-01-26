@@ -84,6 +84,9 @@ case "$package" in
 		depends build_musl_cross_make_host
 		#  "$libertine_host"-ranlib "$libertine_host"-as
 		build_needs "$libertine_host"-cc "$libertine_host"-ar "$libertine_host"-strip
+		
+		depends build_paxctl
+		build_needs paxctl
 	;;
 	
 esac
