@@ -12,7 +12,6 @@ depends build_netbsd_src_patch
 build_needs patch
 
 build_needs xargs
-build_needs bzip2
 build_needs cmp tail od cut mktemp sort uniq echo touch dirname basename uname
 build_needs install sed
 
@@ -122,7 +121,7 @@ case "$package" in
 		
 		# Something in here also segfaults
 		build_provides date
-		build_provides sleep
+		#build_provides sleep
 		build_provides uname
 		build_provides printenv
 		
