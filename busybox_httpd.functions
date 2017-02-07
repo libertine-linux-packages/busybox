@@ -4,7 +4,10 @@
 
 variant=busybox_httpd_filesystem
 
+depends build_busybx
+
 depends libertine_filesystem
+
 depends busybox
 
 libertine_compile_busybox_httpd()

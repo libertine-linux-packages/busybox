@@ -157,6 +157,8 @@ case "$package" in
 	;;
 	
 	busybox)
+
+		depends build_busybox
 	
 		depends build_ccache
 		build_needs ccache

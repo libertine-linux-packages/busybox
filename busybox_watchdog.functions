@@ -4,7 +4,10 @@
 
 variant=busybox_watchdog_filesystem
 
+depends build_busybox
+
 depends libertine_filesystem
+
 depends busybox
 
 libertine_compile_busybox_watchdog()

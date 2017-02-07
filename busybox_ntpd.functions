@@ -3,7 +3,11 @@
 
 
 variant=busybox_ntpd_filesystem
+
+depends build_busybox
+
 depends libertine_filesystem
+
 depends busybox
 
 libertine_compile_busybox_ntpd()
