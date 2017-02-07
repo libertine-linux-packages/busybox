@@ -22,55 +22,138 @@ build_needs sleep
 case "$package" in
 	
 	build_busybox)
-		# ranlib as
-		build_needs cc ar
+		build_needs cc
+		build_needs ar
 		
-		build_provides echo pwd printf '[' '[[' test true false kill yes dirname basename
-		build_provides mkdir rmdir rm touch chmod chown chgrp mkfifo mknod install mktemp which unlink
-		build_provides stat readlink ls realpath
-		build_provides mv cp ln
-		build_provides find xargs
-		build_provides cksum md5sum sha1sum sha256sum sha512sum sha3sum
+		build_provides echo
+		build_provides pwd
+		build_provides printf
+		build_provides '['
+		build_provides '[['
+		build_provides test
+		build_provides true
+		build_provides false
+		build_provides kill
+		build_provides yes
+		build_provides dirname
+		build_provides basename
+		build_provides mkdir
+		build_provides rmdir
+		build_provides rm
+		build_provides touch
+		build_provides chmod
+		build_provides chown
+		build_provides chgrp
+		build_provides mkfifo
+		build_provides mknod
+		build_provides install
+		build_provides mktemp
+		build_provides which
+		build_provides unlink
+		build_provides stat
+		build_provides readlink
+		build_provides ls
+		build_provides realpath
+		build_provides mv
+		build_provides cp
+		build_provides ln
+		build_provides find
+		build_provides xargs
+		build_provides cksum
+		build_provides md5sum
+		build_provides sha1sum
+		build_provides sha256sum
+		build_provides sha512sum
+		build_provides sha3sum
 		build_provides env
-		
-		# ? Seg faults ?
-		#build_provides grep awk sed egrep fgrep pgrep cut comm split
-		build_provides tr dos2unix unix2dos
-		build_provides tee flock
+		build_provides tr
+		build_provides dos2unix
+		build_provides unix2dos
+		build_provides tee
+		build_provides flock
 		build_provides dd
-		build_provides clear reset
+		build_provides clear
+		build_provides reset
 		build_provides getopt
-		
-		# We need to create a wrapper that intercepts -n, name, and replace it with something generic, eg 'libertine'
 		build_provides id
-		
-		# Something in here also segfaults
-		#build_provides date
-		#build_provides sleep uname printenv
-		
-		# Possibly ok
-		#build_provides expr seq sum df du expand unexpand fold nice nohup dc time zcat
-		
-		
-		# Seg faults - even when building with all patches
-		# build_provides sh
-
-		
-		# Incapable of applying musl patches
-		# build_provides patch
-
-
-		build_provides cmp diff ed vi
-		build_provides sort uniq
-		build_provides head tail cat od tac wc base64
-		# xz is provided by build_xz_utils_xz
-		build_provides tar cpio gzip gunzip bzip2 bunzip2 bzcat unxz xzcat lzma unlzma lzcat lzop unlzop lzopcat unzip rpm2cpio uncompress
-		
-		# Weirdly, some configure scripts look for this tape tool
+		build_provides cmp
+		build_provides sort
+		build_provides head
+		build_provides diff
+		build_provides ed
+		build_provides vi
+		build_provides uniq
+		build_provides tail
+		build_provides cat
+		build_provides od
+		build_provides tac
+		build_provides wc
+		build_provides base64
 		build_provides mt
+		build_provides tar
+		build_provides cpio
+		build_provides gzip
+		build_provides gunzip
+		build_provides bzip2
+		build_provides bunzip2
+		build_provides bzcat
+		build_provides unxz
+		build_provides xzcat
+		build_provides lzma
+		build_provides unlzma
+		build_provides lzcat
+		build_provides lzop
+		build_provides unlzop
+		build_provides lzopcat
+		build_provides unzip
+		build_provides rpm2cpio
+		build_provides uncompress
+		build_provides ed
+		build_provides iconv
 		
 		# musl-extras
-		build_provides getconf getent iconv
+		build_provides getconf
+		build_provides getent
+		
+		# Note: xz is provided by build_xz_utils_xz (linux needs more features)
+		# Note: patch is probided by build_netbsd_src_patch (downstream users like musl_cross_make and even ourselves need more features)
+		
+		# Segmentation Fault issues
+		
+		# Something in here also segfaults
+		build_provides date
+		build_provides sleep
+		build_provides uname
+		build_provides printenv
+		
+		# Possibly ok
+		build_provides expr
+		build_provides seq
+		#build_provides sum
+		#build_provides df
+		#build_provides du
+		#build_provides expand
+		#build_provides unexpand
+		#build_provides fold
+		#build_provides nice
+		#build_provides nohup
+		#build_provides dc
+		#build_provides time
+		#build_provides zcat
+		
+		# Something in this list
+		build_provides grep
+		build_provides awk
+		build_provides sed
+		#build_provides egrep
+		#build_provides fgrep
+		#build_provides pgrep
+		build_provides cut
+		#build_provides comm
+		#build_provides split
+		
+		# Very broken
+		#build_provides sh
 	;;
 	
 	busybox)
