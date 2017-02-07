@@ -4,7 +4,7 @@
 
 variant=busybox_httpd_filesystem
 
-depends build_busybx
+depends build_busybox
 
 depends libertine_filesystem
 

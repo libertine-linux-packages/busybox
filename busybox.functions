@@ -145,9 +145,9 @@ case "$package" in
 		build_provides grep
 		build_provides awk
 		build_provides sed
-		#build_provides egrep
-		#build_provides fgrep
-		#build_provides pgrep
+		build_provides egrep
+		build_provides fgrep
+		build_provides pgrep
 		build_provides cut
 		#build_provides comm
 		#build_provides split
