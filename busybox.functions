@@ -16,6 +16,7 @@ build_needs cmp tail od cut mktemp sort uniq echo touch dirname basename uname
 build_needs install sed
 
 # Not sure why, but is needed...
+depends build_netbsd_src_sleep
 build_needs sleep
 
 case "$package" in
